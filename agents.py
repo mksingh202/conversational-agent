@@ -19,7 +19,7 @@ CITATION_PATTERN = re.compile(r"\[p\d+:[^\]]+\]")
 
 def generate_answer(question, documents):
     context = "\n".join(
-        f"[p{d.metadata.get('page')}:{d.metadata.get('chunk_id')}] {d.page_content}"
+        f"[p{d.metadata.get('page')}:c{d.metadata.get('chunk_id')}] {d.page_content}"
         for d in documents
     )
 
@@ -43,7 +43,7 @@ def generate_answer(question, documents):
     sentences = sent_tokenize(clean_text)
 
     citations = list(dict.fromkeys(
-        f"[p{d.metadata.get('page')}:{d.metadata.get('chunk_id')}]"
+        f"[p{d.metadata.get('page')}:c{d.metadata.get('chunk_id')}]"
         for d in documents
         if d.metadata.get("page") is not None
     ))[:1]
