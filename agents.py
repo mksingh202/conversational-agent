@@ -1,8 +1,10 @@
 import re
 import nltk
-from llm_hub import openai_llm
 from nltk.tokenize import sent_tokenize
+from langchain_openai import ChatOpenAI
 
+
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
 nltk.download("punkt")
 
@@ -33,7 +35,7 @@ def generate_answer(question, documents):
         {question}
     """
 
-    response = openai_llm.invoke(prompt)
+    response = llm.invoke(prompt)
     raw_text = response.content
 
     if not isinstance(raw_text, str) or not raw_text.strip():

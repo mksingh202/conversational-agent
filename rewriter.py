@@ -1,5 +1,6 @@
-from llm_hub import openai_llm
+from langchain_openai import ChatOpenAI
 
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
 REWRITE_PROMPT = """
     Given the conversation history and the follow-up question,
@@ -16,7 +17,6 @@ REWRITE_PROMPT = """
 
 def rewrite_question(chat_history, question):
     history_lines = []
-
     for h in chat_history:
         if isinstance(h, dict):
             user = h.get("user")
@@ -40,7 +40,7 @@ def rewrite_question(chat_history, question):
         question=question
     )
 
-    response = openai_llm.invoke(prompt)
+    response = llm.invoke(prompt)
     rewritten = response.content
 
     if not isinstance(rewritten, str) or not rewritten.strip():

@@ -4,7 +4,6 @@ from search import init_bm25
 from workflow import run_query
 from ingestion import load_documents, semantic_chunk
 
-
 vector_db = VectorDB()
 
 def ingest(path):

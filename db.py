@@ -7,11 +7,13 @@ from langchain_community.vectorstores.pgvector import PGVector
 load_dotenv()
 
 CONNECTION_STRING = f"postgresql+psycopg2://{os.getenv('PG_USER')}:{os.getenv('PG_PASSWORD')}@{os.getenv('PG_HOST')}:{os.getenv('PG_PORT')}/{os.getenv('PG_DB_NAME')}"
-COLLECTION_NAME = "adani_earnings"
+COLLECTION_NAME = "adani_releases"
 
 class VectorDB:
     def __init__(self):
-        self.embeddings = OpenAIEmbeddings()
+        self.embeddings = OpenAIEmbeddings(
+            model="text-embedding-3-large"
+        )
         self.store = PGVector(
             connection_string=CONNECTION_STRING,
             collection_name=COLLECTION_NAME,

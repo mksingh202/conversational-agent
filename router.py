@@ -1,5 +1,7 @@
-from llm_hub import openai_llm
+from langchain_openai import ChatOpenAI
 
+
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
 PROMPT = """
     Classify the query into one label:
@@ -12,7 +14,7 @@ PROMPT = """
 """
 
 def route_query(query: str) -> str:
-    response = openai_llm.invoke(PROMPT.format(query=query))
+    response = llm.invoke(PROMPT.format(query=query))
     label = response.content.strip().upper()
-
+    print("route_query(label) ===>>>>>", label)
     return label if label in {"FACTUAL", "FOLLOW_UP", "OUT_OF_SCOPE"} else "FACTUAL"
