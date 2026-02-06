@@ -8,16 +8,24 @@ llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
 nltk.download("punkt")
 
-SYSTEM_PROMPT = """
-    Answer the question using the provided context.
-    DO NOT include citations, page numbers, or bracketed references in your answer.
-    Citations will be added separately.
+# SYSTEM_PROMPT = """
+#     Answer the question using the provided context.
+#     Do Not include citations, page numbers, or bracketed references in your answer.
+#     Citations will be added separately.
 
-    If the answer is not present, say:
+#     If the answer is not present, say:
+#     "Not found in the document."
+# """
+
+SYSTEM_PROMPT = """
+    Answer using ONLY the provided context.
+
+    Rules:
+    - Keep the final answer short (4-5 sentences max).
+    - Do not explain unless asked.
+    - If not present, say exactly:
     "Not found in the document."
 """
-
-CITATION_PATTERN = re.compile(r"\[p\d+:[^\]]+\]")
 
 def generate_answer(question, documents):
     context = "\n".join(
@@ -41,6 +49,7 @@ def generate_answer(question, documents):
     if not isinstance(raw_text, str) or not raw_text.strip():
         return "Not found in the document."
 
+    CITATION_PATTERN = re.compile(r"\[p\d+:[^\]]+\]")
     clean_text = re.sub(CITATION_PATTERN, "", raw_text).strip()
     sentences = sent_tokenize(clean_text)
 
@@ -50,6 +59,7 @@ def generate_answer(question, documents):
         if d.metadata.get("page") is not None
     ))[:1]
 
+    print("++=========>>>>>>>>", citations)
     final_answer = " ".join(sentence.strip() for sentence in sentences)
     if final_answer.lower().startswith("not found"):
         return final_answer

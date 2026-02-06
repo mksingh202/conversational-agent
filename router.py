@@ -16,5 +16,4 @@ PROMPT = """
 def route_query(query: str) -> str:
     response = llm.invoke(PROMPT.format(query=query))
     label = response.content.strip().upper()
-    print("route_query(label) ===>>>>>", label)
     return label if label in {"FACTUAL", "FOLLOW_UP", "OUT_OF_SCOPE"} else "FACTUAL"

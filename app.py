@@ -26,7 +26,7 @@ if __name__ == "__main__":
 
         print("\nRetrieved Chunks:")
         print(f"{'Rank':<5} {'Citation':<12} {'Retrieval':<12} {'RRF':<8} Snippet")
-        print("-" * 150)
+        print("-" * 140)
         for i, hit in enumerate(result["documents"], 1):
             doc = hit["doc"]
             snippet = doc.page_content[:100].replace("\n", " ") + "..."

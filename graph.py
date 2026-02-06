@@ -15,16 +15,13 @@ class AgentState(TypedDict):
     route: str
 
 def router_node(state):
-    print("router_node ====>>>>>> ", state)
     return {"route": route_query(state["question"])}
 
 def retrieve_node(state):
-    print("retrieve_node ===========>>>>>>>>>>>>", state)
     q = state.get("rewritten") or state["question"]
     return {"documents": hybrid_search(q)}
 
 def answer_node(state):
-    print("answer_node =======>>>>>>", state)
     if not state["documents"]:
         return {"answer": "Not found in the document."}
     q = state.get("rewritten") or state["question"]
@@ -33,13 +30,11 @@ def answer_node(state):
     # return {"answer": generate_answer(q, state["documents"])}
 
 def rewrite_node(state):
-    print("rewrite_node =======>>>>>>", state)
     return {
         "rewritten": rewrite_question(state["chat_history"], state["question"])
     }
 
 def refuse_node(state):
-    print("refuse_node =======>>>>>>", state)
     return {"answer": "Not found in the document."}
 
 graph = StateGraph(AgentState)
