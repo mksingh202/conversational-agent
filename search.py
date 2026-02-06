@@ -1,7 +1,6 @@
 from db import VectorDB
 from bm25 import BM25Index
 
-
 vector_db = VectorDB()
 bm25_index = None
 
@@ -35,9 +34,6 @@ def reciprocal_rank_fusion(vector_hits, bm25_hits, k=60, top_n=5):
 
 
 def hybrid_search(query: str, k: int = 5):
-    if bm25_index is None:
-        raise RuntimeError("BM25 index not initialized. Call init_bm25() first.")
-
     vector_hits = vector_db.search(query, k=k)
     bm25_hits = bm25_index.search(query, k=k)
 
