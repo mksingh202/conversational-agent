@@ -28,7 +28,9 @@ def answer_node(state):
     if not state["documents"]:
         return {"answer": "Not found in the document."}
     q = state.get("rewritten") or state["question"]
-    return {"answer": generate_answer(q, state["documents"])}
+    docs_only = [d["doc"] for d in state["documents"]]
+    return {"answer": generate_answer(q, docs_only)}
+    # return {"answer": generate_answer(q, state["documents"])}
 
 def rewrite_node(state):
     print("rewrite_node =======>>>>>>", state)
