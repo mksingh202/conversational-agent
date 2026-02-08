@@ -1,10 +1,12 @@
-# Retail Insights Assistant
+# Conversational Intelligence Agent
 
-An intelligent, scalable **GenAI-based assistant** for querying retail sales data using:
-- **OpenAI Chat + Embeddings**
-- **LangGraph Agentic Framework**
+A production-style GenAI conversational assistant that enables users to query PDF documents while maintaining conversational history:
+- **OpenAI (GPT-4o-mini + Embeddings)**
+- **LangGraph Agent Workflow**
 - **PostgreSQL + pgvector**
-- **Streamlit UI**
+- **Hybrid Retrieval (Vector + BM25)**
+- **Semantic Chunking**
+- **Citation-based Answers**
 ---
 
 ## Workflow Diagram
@@ -12,19 +14,19 @@ An intelligent, scalable **GenAI-based assistant** for querying retail sales dat
 
 ## Project Structure
 ```
-retail-insights-assistants
-├── app.py
-├── ingestion.py
-├── search.py
-├── llm.py
-├── agents.py
-├── workflow.py
-├── state.py
-├── db.py
-├── db.sql
-├── .env
-├── requirements.txt
-└── README.md
+conversational-agent
+├── app.py              # CLI entrypoint + chat loop
+├── ingestion.py        # PDF loading, table extraction, semantic chunking
+├── search.py           # Hybrid retrieval + RRF
+├── bm25.py             # Keyword search index
+├── agents.py           # Answer generation with citations
+├── workflow.py         # Graph execution wrapper
+├── graph.py            # LangGraph workflow definition
+├── db.py               # PGVector integration
+├── router.py           # Query classification
+├── rewriter.py         # Follow-up question rewriting
+├── requirements.txt    # Dependencies
+└── README.md           # User Manual
 ```
 
 ## Prerequisites
@@ -37,24 +39,9 @@ retail-insights-assistants
 ## Database Setup
 Open PostgreSQL and run these command:
 ```sql
-CREATE DATABASE retail_data;
+CREATE DATABASE adani_data;
 
-CREATE EXTENSION vector;
-
-CREATE TABLE sales_embeddings (
-    id SERIAL PRIMARY KEY,
-    content TEXT,
-    embedding VECTOR(1536),
-    metadata JSONB
-);
-```
-
-#### Performance index (Optional)
-```sql
-CREATE INDEX sales_embedding_idx
-ON sales_embeddings
-USING ivfflat (embedding vector_cosine_ops)
-WITH (lists = 100);
+CREATE EXTENSION IF NOT EXISTS vector;
 ```
 
 ## Create .env File
@@ -72,54 +59,14 @@ DB_PASSWORD=<db_password>
 
 ## Run the Streamlit Application
 ```bash 
-streamlit run app.py
+python app.py <path_to_pdf>
 ```
 
-## Ingestion Workflow
-- Select Ingestion Mode in left sidebar
-- Upload your Sales CSV
-- Click Ingest
-- Rows are embedded and stored in PostgreSQL
+## Example Output
+```bash 
+Answer:
+Consolidated EBITDA in H1 FY26 is Rs. 7,688 crore [p1:c1.0].
 
-## Q&A Workflow
-- Select Q&A Mode
-- Ask questions like:
-    - Which region has highest revenue?
-    - Which products underperformed?
-    - Summarize sales performance.
-
-The system performs:
-```mathematica
-Question → Embedding → Vector Similarity → Retrieved Context → LLM → Answer
+Retrieved Chunks:
+Rank  Citation     RRF      Snippet
 ```
-
-## Agentic Workflow
-This solution uses LangGraph multi-agent orchestration:
-| Agent            | Responsibility               |
-| ---------------- | ---------------------------- |
-| Embedding Agent  | Converts query → vector      |
-| Retrieval Agent  | Finds relevant sales rows    |
-| Validation Agent | Ensures meaningful context   |
-| Answer Agent     | Generates final LLM response |
-
-## Testing
-- Ingest sample CSV (Sale Report.csv) and ask these questions.
-- Number of stocks of design number AN202 with size XXL?
-- Number of stocks of design number AN201 with size XL?
-- What is the SKU code of design number AN202 with size XXL?
-
-## Future Improvements
-- Real-time streaming ingestion
-- Hybrid SQL + semantic filtering
-- Dashboard analytics
-- Confidence scoring
-- Source citations
-
-## Scalability (100GB+)
-| Layer      | Strategy                        |
-| ---------- | ------------------------------- |
-| Ingestion  | PySpark / Databricks            |
-| Storage    | Parquet / Delta Lake            |
-| Retrieval  | pgvector + metadata filtering   |
-| LLM        | Prompt caching + RAG            |
-| Monitoring | Accuracy + latency + token cost |

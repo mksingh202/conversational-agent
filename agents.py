@@ -3,18 +3,6 @@ from langchain_openai import ChatOpenAI
 
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
-# SYSTEM_PROMPT = """
-#     Answer using ONLY the provided context.
-
-#     Rules:
-#     - Keep the final answer short (3 sentences max).
-#     - Include the citation of the chunk you used at the end.
-#     Example: Revenue increased by 14%. [p12:c4]
-#     - If multiple chunks support the answer, include multiple citations.
-#     - Do not explain unless asked.
-#     - If not present, say exactly:
-#     "Not found in the document."
-# """
 
 SYSTEM_PROMPT = """
     Answer using ONLY the provided context.

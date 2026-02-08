@@ -12,6 +12,15 @@ SECTION_PATTERN = re.compile(
     r"\n(?=[A-Z][A-Za-z &]{3,}\n)"
 )
 
+import warnings
+
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    module="camelot"
+)
+
+
 def load_csv(path: str) -> List[Document]:
     df = pd.read_csv(path)
     docs = []
@@ -50,7 +59,8 @@ def load_pdf(path: str) -> List[Document]:
         tables = camelot.read_pdf(
             path,
             pages="all",
-            flavor="lattice",  # use "stream" if lattice fails
+            flavor="lattice",
+            line_scale=40
         )
 
         for i, table in enumerate(tables):
@@ -68,7 +78,6 @@ def load_pdf(path: str) -> List[Document]:
                     },
                 )
             )
-
     except Exception as e:
         # Fail gracefully
         print(f"[WARN] Camelot failed on {path}: {e}")

@@ -1,28 +1,26 @@
 import os
 from dotenv import load_dotenv
-# from langchain_postgres import PGVector
+from sqlalchemy import create_engine
+from langchain_postgres import PGVector
 from langchain_openai import OpenAIEmbeddings
-from langchain_community.vectorstores.pgvector import PGVector
 
 
 load_dotenv()
 
-CONNECTION_STRING = f"postgresql+psycopg2://{os.getenv('PG_USER')}:{os.getenv('PG_PASSWORD')}@{os.getenv('PG_HOST')}:{os.getenv('PG_PORT')}/{os.getenv('PG_DB_NAME')}"
-COLLECTION_NAME = "adani_releases"
 
 class VectorDB:
     def __init__(self):
         self.embeddings = OpenAIEmbeddings(
             model="text-embedding-3-large"
         )
+        engine = create_engine(
+            f"postgresql+psycopg://{os.getenv('PG_USER')}:{os.getenv('PG_PASSWORD')}@"
+            f"{os.getenv('PG_HOST')}:{os.getenv('PG_PORT')}/{os.getenv('PG_DB_NAME')}"
+        )
         self.store = PGVector(
-            connection_string=CONNECTION_STRING,
-            collection_name=COLLECTION_NAME,
-            embedding_function=self.embeddings,
-            collection_metadata={
-                "domain": "finance",
-                "version": "FY26"
-            }
+            embeddings=self.embeddings,
+            connection=engine,
+            collection_name="adani_releases",
         )
 
     def add_documents(self, documents):
