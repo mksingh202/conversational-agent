@@ -25,25 +25,11 @@ def load_csv(path: str) -> List[Document]:
         )
     return docs
 
-# def load_pdf(path: str) -> List[Document]:
-#     docs = []
-#     with pdfplumber.open(path) as pdf:
-#         for page_no, page in enumerate(pdf.pages, start=1):
-#             text = page.extract_text()
-#             if text:
-#                 docs.append(
-#                     Document(
-#                         page_content=text,
-#                         metadata={"source": os.path.basename(path), "page": page_no},
-#                     )
-#                 )
-#     return docs
-
 def load_pdf(path: str) -> List[Document]:
     docs: List[Document] = []
     source = os.path.basename(path)
 
-    # ---- 1. Extract normal text using pdfplumber ----
+    # 1. Extract normal text using pdfplumber
     with pdfplumber.open(path) as pdf:
         for page_no, page in enumerate(pdf.pages, start=1):
             text = page.extract_text()
@@ -59,7 +45,7 @@ def load_pdf(path: str) -> List[Document]:
                     )
                 )
 
-    # ---- 2. Extract tables using Camelot ----
+    # 2. Extract tables using Camelot
     try:
         tables = camelot.read_pdf(
             path,
@@ -84,7 +70,7 @@ def load_pdf(path: str) -> List[Document]:
             )
 
     except Exception as e:
-        # Fail gracefully (important for pipelines)
+        # Fail gracefully
         print(f"[WARN] Camelot failed on {path}: {e}")
 
     return docs
@@ -110,7 +96,6 @@ def semantic_chunk(documents: List[Document]) -> List[Document]:
                 continue
 
             # 2. Keep tables intact
-            # if "TABLE DATA:" in section:
             if doc.metadata.get("type", '') == "table":
                 chunks.append(
                     Document(

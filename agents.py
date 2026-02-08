@@ -1,19 +1,18 @@
-import re
-import nltk
-from nltk.tokenize import sent_tokenize
 from langchain_openai import ChatOpenAI
 
 
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
-nltk.download("punkt")
-
 # SYSTEM_PROMPT = """
-#     Answer the question using the provided context.
-#     Do Not include citations, page numbers, or bracketed references in your answer.
-#     Citations will be added separately.
+#     Answer using ONLY the provided context.
 
-#     If the answer is not present, say:
+#     Rules:
+#     - Keep the final answer short (3 sentences max).
+#     - Include the citation of the chunk you used at the end.
+#     Example: Revenue increased by 14%. [p12:c4]
+#     - If multiple chunks support the answer, include multiple citations.
+#     - Do not explain unless asked.
+#     - If not present, say exactly:
 #     "Not found in the document."
 # """
 
@@ -21,10 +20,16 @@ SYSTEM_PROMPT = """
     Answer using ONLY the provided context.
 
     Rules:
-    - Keep the final answer short (4-5 sentences max).
-    - Do not explain unless asked.
-    - If not present, say exactly:
+    - Every factual sentence MUST end with a citation.
+    - Citation format: [p<page>:c<chunk>]
+    - If multiple chunks support a sentence, cite all of them.
+    - Do NOT combine multiple facts under one citation.
+    - Keep the answer short (3 sentences max).
+
+    If the answer is not present in the context, reply exactly:
     "Not found in the document."
+
+    If you cannot provide citations, you MUST refuse.
 """
 
 def generate_answer(question, documents):
@@ -49,22 +54,8 @@ def generate_answer(question, documents):
     if not isinstance(raw_text, str) or not raw_text.strip():
         return "Not found in the document."
 
-    CITATION_PATTERN = re.compile(r"\[p\d+:[^\]]+\]")
-    clean_text = re.sub(CITATION_PATTERN, "", raw_text).strip()
-    sentences = sent_tokenize(clean_text)
-
-    citations = list(dict.fromkeys(
-        f"[p{d.metadata.get('page')}:c{d.metadata.get('chunk_id')}]"
-        for d in documents
-        if d.metadata.get("page") is not None
-    ))[:1]
-
-    print("++=========>>>>>>>>", citations)
-    final_answer = " ".join(sentence.strip() for sentence in sentences)
-    if final_answer.lower().startswith("not found"):
-        return final_answer
-    
-    if citations:
-        final_answer = f"{final_answer} {citations[0]}"
+    final_answer = raw_text.strip()
+    if "[p" not in final_answer or final_answer.lower().startswith("not found"):
+        return "Not found in the document."
     
     return final_answer

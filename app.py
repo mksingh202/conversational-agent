@@ -25,17 +25,17 @@ if __name__ == "__main__":
         print("\nAnswer:", result["answer"])
 
         print("\nRetrieved Chunks:")
-        print(f"{'Rank':<5} {'Citation':<12} {'Retrieval':<12} {'RRF':<8} Snippet")
-        print("-" * 140)
+        print(f"{'Rank':<5} {'Citation':<12} {'RRF':<8} Snippet")
+        print("-" * 125)
         for i, hit in enumerate(result["documents"], 1):
             doc = hit["doc"]
             snippet = doc.page_content[:100].replace("\n", " ") + "..."
             print(
                 f"{i:<5} "
                 f"p{doc.metadata.get('page')}:c{doc.metadata.get('chunk_id'):<8} "
-                f"{hit['retrieval_score']:<12.4f} "
                 f"{hit['rrf_score']:<8.4f} "
                 f"{snippet}"
             )
         history.append(f"User: {q}")
         history.append(f"Assistant: {result["answer"]}")
+        history = history[-5:]

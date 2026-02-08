@@ -27,7 +27,6 @@ def answer_node(state):
     q = state.get("rewritten") or state["question"]
     docs_only = [d["doc"] for d in state["documents"]]
     return {"answer": generate_answer(q, docs_only)}
-    # return {"answer": generate_answer(q, state["documents"])}
 
 def rewrite_node(state):
     return {
