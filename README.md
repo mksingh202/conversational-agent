@@ -9,9 +9,6 @@ A production-style GenAI conversational assistant that enables users to query PD
 - **Citation-based Answers**
 ---
 
-## Workflow Diagram
-![Agentic Workflow](workflow.png)
-
 ## Project Structure
 ```
 conversational-agent
@@ -30,7 +27,6 @@ conversational-agent
 ```
 
 ## Prerequisites
-
 - Python 3.9+
 - PostgreSQL 14+
 - pgvector extension
