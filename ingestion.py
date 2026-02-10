@@ -13,13 +13,11 @@ SECTION_PATTERN = re.compile(
 )
 
 import warnings
-
 warnings.filterwarnings(
     "ignore",
     category=UserWarning,
     module="camelot"
 )
-
 
 def load_csv(path: str) -> List[Document]:
     df = pd.read_csv(path)
@@ -66,7 +64,6 @@ def load_pdf(path: str) -> List[Document]:
         for i, table in enumerate(tables):
             df = table.df
             table_text = df.to_csv(index=False)
-
             docs.append(
                 Document(
                     page_content=table_text,
@@ -85,12 +82,11 @@ def load_pdf(path: str) -> List[Document]:
     return docs
 
 def load_documents(path: str) -> List[Document]:
-    if path.endswith(".csv"):
-        return load_csv(path)
     if path.endswith(".pdf"):
         return load_pdf(path)
+    if path.endswith(".csv"):
+        return load_csv(path)
     raise ValueError("Unsupported file type")
-
 
 def semantic_chunk(documents: List[Document]) -> List[Document]:
     chunks = []
