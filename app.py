@@ -27,10 +27,10 @@ if __name__ == "__main__":
         if 'documents' in result and 'not found in the document' not in result["answer"].lower():
             print("\nRetrieved Chunks:")
             print(f"{'Rank':<5} {'Citation':<12} {'RRF':<8} Snippet")
-            print("-" * 125)
+            print("-" * 185)
             for i, hit in enumerate(result["documents"], 1):
                 doc = hit["doc"]
-                snippet = doc.page_content[:100].replace("\n", " ") + "..."
+                snippet = doc.page_content[:150].replace("\n", " ") + "..."
                 print(
                     f"{i:<5} "
                     f"p{doc.metadata.get('page')}:c{doc.metadata.get('chunk_id'):<8} "

@@ -1,135 +1,109 @@
 import re
 import os
-import camelot
-import pdfplumber
-import pandas as pd
-from typing import List
+import fitz
 from langchain_core.documents import Document
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
-SECTION_PATTERN = re.compile(
-    r"\n(?=[A-Z][A-Za-z &]{3,}\n)"
-)
+PERIOD_PATTERN = r"(H\d-\d{2}|Q\d-\d{2}|FY\d{2})"
 
-import warnings
-warnings.filterwarnings(
-    "ignore",
-    category=UserWarning,
-    module="camelot"
-)
-
-def load_csv(path: str) -> List[Document]:
-    df = pd.read_csv(path)
+def load_documents(path):
     docs = []
-    for idx, row in df.iterrows():
-        content = " | ".join(f"{k}: {v}" for k, v in row.items())
+    pdf = fitz.open(path)
+
+    for page_num in range(len(pdf)):
+        page = pdf[page_num]
+        text = page.get_text("text")
+
         docs.append(
             Document(
-                page_content=content,
-                metadata={"source": os.path.basename(path), "row": idx},
+                page_content=text,
+                metadata={
+                    "page": page_num + 1,
+                    "source": path
+                }
             )
         )
-    return docs
-
-def load_pdf(path: str) -> List[Document]:
-    docs: List[Document] = []
-    source = os.path.basename(path)
-
-    # 1. Extract normal text using pdfplumber
-    with pdfplumber.open(path) as pdf:
-        for page_no, page in enumerate(pdf.pages, start=1):
-            text = page.extract_text()
-            if text and text.strip():
-                docs.append(
-                    Document(
-                        page_content=text,
-                        metadata={
-                            "source": source,
-                            "page": page_no,
-                            "type": "text",
-                        },
-                    )
-                )
-
-    # 2. Extract tables using Camelot
-    try:
-        tables = camelot.read_pdf(
-            path,
-            pages="all",
-            flavor="lattice",
-            line_scale=40
-        )
-
-        for i, table in enumerate(tables):
-            df = table.df
-            table_text = df.to_csv(index=False)
-            docs.append(
-                Document(
-                    page_content=table_text,
-                    metadata={
-                        "source": source,
-                        "page": table.page,
-                        "type": "table",
-                        "table_index": i,
-                    },
-                )
-            )
-    except Exception as e:
-        # Fail gracefully
-        print(f"[WARN] Camelot failed on {path}: {e}")
 
     return docs
 
-def load_documents(path: str) -> List[Document]:
-    if path.endswith(".pdf"):
-        return load_pdf(path)
-    if path.endswith(".csv"):
-        return load_csv(path)
-    raise ValueError("Unsupported file type")
+def extract_entity(source_path: str) -> str:
+    filename = os.path.basename(source_path)
+    return filename.split("_")[0]
 
-def semantic_chunk(documents: List[Document]) -> List[Document]:
+def detect_scope(text: str) -> str:
+    text_lower = text.lower()
+
+    if "consolidated" in text_lower:
+        return "consolidated"
+
+    if "standalone" in text_lower:
+        return "standalone"
+
+    if "segment" in text_lower:
+        return "segment"
+
+    return "general"
+
+def clean_text(text: str) -> str:
+    if not text:
+        return ""
+
+    patterns_to_remove = [
+        r"STRICTLY\s+CONFIDENTIAL",
+        r"Home\s+outline\s+Hamburger\s+Menu\s+Icon\s+with\s+solid\s+fill\s*\d*",
+        r"Hamburger\s+Menu\s+Icon\s+with\s+solid\s+fill\s*\d*",
+    ]
+
+    for pattern in patterns_to_remove:
+        text = re.sub(pattern, "", text, flags=re.IGNORECASE)
+
+    text = re.sub(r"\b\d+\b(?=\s*$)", "", text)
+    text = re.sub(r"[•●▪■]+", " ", text)
+    text = re.sub(r"\s+", " ", text)
+
+    return text.strip()
+
+def semantic_chunk(documents):
     chunks = []
+    page_chunk_counter = {}
+
     for doc in documents:
-        text = doc.page_content
-        
-        # 1. Split by semantic sections
-        sections = SECTION_PATTERN.split(text)
-        for sec_id, section in enumerate(sections):
-            section = section.strip()
-            if not section:
+        page = doc.metadata["page"]
+        source = doc.metadata["source"]
+
+        if page not in page_chunk_counter:
+            page_chunk_counter[page] = 0
+
+        entity = extract_entity(source)
+
+        raw_text = clean_text(doc.page_content)
+        scope = detect_scope(raw_text)
+        blocks = re.split(r"\n{2,}", raw_text)
+        for block in blocks:
+            block = block.strip()
+            if not block:
                 continue
 
-            # 2. Keep tables intact
-            if doc.metadata.get("type", '') == "table":
-                chunks.append(
-                    Document(
-                        page_content=section,
-                        metadata={
-                            **doc.metadata,
-                            "chunk_type": "table",
-                            "chunk_id": sec_id
-                        },
-                    )
+            periods = re.findall(PERIOD_PATTERN, block)
+
+            if periods:
+                chunk_type = "financial"
+            else:
+                chunk_type = "commentary"
+
+            chunks.append(
+                Document(
+                    page_content=raw_text,
+                    metadata={
+                        "page": page,
+                        "source": source,
+                        "entity": entity,
+                        "scope": scope,
+                        "chunk_type": chunk_type,
+                        "chunk_id": page_chunk_counter[page]
+                    }
                 )
-                continue
-
-            # 3. Light size control inside semantic blocks
-            splitter = RecursiveCharacterTextSplitter(
-                chunk_size=900,
-                chunk_overlap=200,
-                separators=["\n\n", "\n", ". "],
             )
+            page_chunk_counter[page] += 1
 
-            for i, sub_chunk in enumerate(splitter.split_text(section)):
-                chunks.append(
-                    Document(
-                        page_content=sub_chunk,
-                        metadata={
-                            **doc.metadata,
-                            "chunk_type": "text",
-                            "chunk_id": f"{sec_id}.{i}"
-                        },
-                    )
-                )
     return chunks

@@ -12,7 +12,7 @@ SYSTEM_PROMPT = """
     - Citation format: [p<page>:c<chunk>]
     - If multiple chunks support a sentence, cite all of them.
     - Do NOT combine multiple facts under one citation.
-    - Keep the answer short (3 sentences max).
+    - Keep the answer short (5 sentences max).
 
     If the answer is not present in the context, reply exactly:
     "Not found in the document."

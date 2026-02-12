@@ -10,33 +10,45 @@ def init_bm25(documents):
     bm25_index = BM25Index(documents)
 
 def reciprocal_rank_fusion(vector_hits, bm25_hits, k=60, top_n=5):
+    seen = set()
+    results = []
+
     fused_scores = {}
-    doc_store = {}
+    id_to_doc = {}
 
-    for rank, (doc, score) in enumerate(vector_hits):
-        doc_id = id(doc)
-        fused_scores[doc_id] = fused_scores.get(doc_id, 0.0) + 1 / (k + rank)
-        doc_store[doc_id] = (doc, score)
+    for rank, (doc, _) in enumerate(vector_hits):
+        doc_id = getattr(doc, "id", None) or id(doc)
+        id_to_doc[doc_id] = doc
 
-    for rank, (doc, score) in enumerate(bm25_hits):
-        doc_id = id(doc)
-        fused_scores[doc_id] = fused_scores.get(doc_id, 0.0) + 1 / (k + rank)
-        doc_store[doc_id] = (doc, score)
+        fused_scores[doc_id] = fused_scores.get(doc_id, 0) + 1 / (k + rank + 1)
 
-    ranked = sorted(
+    for rank, (doc, _) in enumerate(bm25_hits):
+        doc_id = getattr(doc, "id", None) or id(doc)
+        id_to_doc[doc_id] = doc
+
+        fused_scores[doc_id] = fused_scores.get(doc_id, 0) + 1 / (k + rank + 1)
+
+    sorted_results = sorted(
         fused_scores.items(),
         key=lambda x: x[1],
         reverse=True
     )
 
-    return [
-        {
-            "doc": doc_store[doc_id][0],
-            "retrieval_score": doc_store[doc_id][1],
-            "rrf_score": fused
-        }
-        for doc_id, fused in ranked[:top_n]
-    ]
+    for doc_id, score in sorted_results:
+        doc = id_to_doc[doc_id]
+
+        citation_key = (
+            doc.metadata.get("source"),
+            doc.metadata.get("page"),
+            doc.metadata.get("chunk_id"),
+        )
+
+        if citation_key not in seen:
+            seen.add(citation_key)
+            results.append({"doc": doc, "rrf_score": score})
+
+    return results[:top_n]
+
 
 def hybrid_search(query: str, k: int = 5):
     vector_hits = vector_db.search(query, k=k)
